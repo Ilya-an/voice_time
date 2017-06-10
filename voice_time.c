@@ -1,33 +1,7 @@
 /**@authors Илья Андреев
  * @version 1.0
  * @date 02.02.17
- * Данная программа озвучивает текущее время, используя синтезатор речи Festival. При её запуске, голос сообщит текущее время,
- * например, "Время - 17 часов, тридцать две минуты".
- * 
- * Требования для работы программы
- * Для корректной работы, разумеется, необходим сам синтезатор речи Festival, все зависящие от него пакеты и
- * festfox-ru - русский мужской голос для Festival. Данная программа тестировалась только на Linux, но должна работать
- * на всех Unix-подобных системах, на которых установлено выше перечисленное.
- * 
- * Принцип работы
- * В функции main вызывается функция settime, в которой вычисляется текущий час и минута, затем, в зависимости от этих значений, в функциях type_hour и type_min
- * выясняется, когда нужно говорить, "час", "часов" или "часа" (type_hour) и "минута", "минуты" или "минут" (type_min).
- * Например, 1 час, 2 часа, 21 минута или 22 минуты.
- * 
- * Для того, чтобы преобразовать число в его словесную форму, используется функция "transl_number".
- * Чтобы найти, является ли, например, строка "два" окончанием строки "двадцать два" (с помощью функции strstr можно получить
- * ложное срабатывание, например при "двадцать три", где "два" тоже есть) используется функция find_tail (поиск хвоста), а для
- * её замены - функция replace_tail (замена хвоста)
- * 
- * Также, в словесном выражении минут, нужно заменять слова "один" и "два", стоящие в конце, на "одна" и "две" соответственно,
- * (просклонять) для того, чтобы было созвучно со словами "минута" и "минуты" соответственно.
- * 
- * Затем, полученное предложение записывается в файл "voice_time.txt", создаваемый во временном каталоге /tmp. На этом, работа
- * функции settime прекращается.
- * Потом, путь к файлу передаётся синтезатору речи Festival, который и зачитывает содержимое файла.
- * 
- * Планируемые нововедения
- *  1. добавление возможности, при указании флага "-s", зачитывание, помимо часов и минут, количество секунд
+ * @brief Программа для озвучивания текущего времени
  */
 
 #include <stdio.h>
@@ -36,6 +10,8 @@
 #include <malloc.h>
 #include <stdbool.h>
 #include <time.h>
+
+#include "voice_time.h"
 
 /**
  * @fn transl_number
@@ -62,7 +38,7 @@ char* transl_number (char* str_num)
 	int number_dig, first_dig, second_dig;
 	char *dec [] = {"десять", "двадцать", "тридцать", "сорок", "пятьдесят"};
 	char *units [] = {"ноль", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"};
-	char *dec_twen [] = {"одиннадцать", "двеннадцать", "триннадцать", "четырнадцать", "пятнадцать", "шестнадцать", "семнадцать", "восемьнадцать", "девятнадцать"};
+	char *dec_twen [] = {"одиннадцать", "двенадцать", "тринадцать", "четырнадцать", "пятнадцать", "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать"};
 	
 	/// В этом блоке мы проверяем передаваемую строку на правильность. В ней должно быть число, которое будет от 0 до 59
 	number_dig = atoi (str_num);
@@ -80,7 +56,7 @@ char* transl_number (char* str_num)
 		return strcpy (str_num, units [second_dig]);/// Если первая цифра равна 0, то можно сразу же возвращать единицы домой
 	
 	if (first_dig == 1 && second_dig != 0)			/// Проверяем на частный случай чисел диапазона от 11 до 19
-		strcpy (str_num, dec_twen [second_dig]);	
+		strcpy (str_num, dec_twen [second_dig - 1]);	
 	else
 		if (second_dig != 0)
 		{
@@ -181,14 +157,10 @@ char* type_hour (char* str_hour, char* hour)
 		strcpy (str_hour, "час");
 		return str_hour;		
 	}
-	if (find_tail (str_num, "два") == true)			/// Если в конце "два", значит говорим "часа"
-	{
-		strcpy (str_hour, "часа");
-		return str_hour;	
-	}
-	/// А если в конце "три" или "четыре", то говорим "часа" 	
-	if (find_tail (str_num, "три") == true || find_tail (str_num, "четыре") == true)
-		strcpy (str_hour, "часа");
+	
+	/// А если в конце "два", три" или "четыре", то говорим "часа" 	
+	if (find_tail (str_num, "два") == true || find_tail (str_num, "три") == true || find_tail (str_num, "четыре") == true)
+		strcpy (str_hour, "час+а");
 	else
 		strcpy (str_hour, "часов");					/// Во всех остальных случаях говорим "часов"
 		
@@ -249,10 +221,10 @@ char* type_min (char* str_min, char* minuts)
  * @param str_min_word - указатель на строку min_word
  * @param str_min_in_word - указатель на строку min_in_word
  */
-void settime (struct tm *u)
+void settime (struct tm *u, struct tm *y)
 {
 	FILE *fd;
-	char hour [10], minuts [60], hour_word [10], min_word [15], *str_hour_word, *str_min_word, *str_minuts;
+	char hour [10], minuts [60], hour_word [15], min_word [15], *str_hour_word, *str_min_word, *str_minuts;
 	
 	fd = fopen ("/tmp/voice_text.txt", "w");	
 	str_hour_word = hour_word;										/// Создаём указатели на те
@@ -260,7 +232,6 @@ void settime (struct tm *u)
 	str_minuts = minuts;											/// планируем передавать в функции
 	
 	strftime (hour, 10, "%H", u);									/// Записываем в hour количество часов
-	strftime (minuts, 60, "%M", u);									/// Записываем в minuts количество минут
 	
 	/**В следующем блоке кода мы определяем, в какой форме нужно употребить слова "час" и "минута" в зависимости от того, сколько
 	 * сейчас часов или минут, при помощи функций type_hour и type_min. Например, 2 часа, или 12 часов. 1 минута или 29 минут.
@@ -268,7 +239,11 @@ void settime (struct tm *u)
 	 * словесном написании.
 	 */
 	str_hour_word = type_hour (str_hour_word, hour);
+	
+	strftime (minuts, 60, "%M", y);									/// Записываем в minuts количество минут
+	
 	str_min_word = type_min (str_min_word, minuts);
+	
 	str_minuts = transl_number (str_minuts);
 	
 	/**При написании минут в словесной форме, если в конце стоит "один" или "два", то нужно их поменять на "одна" или "две"
@@ -282,7 +257,7 @@ void settime (struct tm *u)
 	else if (find_tail (str_minuts, "два") == true)
 		str_minuts = replace_tail (str_minuts, "две");
 		
-	fprintf (fd, "Время - %s %s, %s %s", hour, str_hour_word, str_minuts, str_min_word);
+	fprintf (fd, "Время - %d %s, %s %s", atoi (hour), str_hour_word, str_minuts, str_min_word);
 	fflush (fd);
 }
 
@@ -295,10 +270,11 @@ void settime (struct tm *u)
  */
 int main()
 {
-	struct tm *u;
+	struct tm *u, *y;
 	const time_t timer = time (NULL);
 	u = localtime (&timer);
-	settime (u);
+	y = localtime (&timer);
+	settime (u, y);
 	system ("festival -b '(begin (voice_msu_ru_nsh_clunits) (tts_file \"/tmp/voice_text.txt\"))'");
 	return 0;
 }
