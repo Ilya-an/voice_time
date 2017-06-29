@@ -44,19 +44,19 @@ char* type_hour (char* str_hour, int hour)
  * 
  * Принимает:
  * 	1. Указатель на строку "str_min", в которую будет записано "минута", "минут" или "минуты"
- * 	2. Число "minuts", хранящая количество минут в цифровом формате, например "4" или "17"
+ * 	2. Число "minute", хранящая количество минут в цифровом формате, например "4" или "17"
  * 
  * Возвращает:
  * 	1. Указатель на строку "str_min", в которой записано одно из трёх форм слова "минута"
  */
-char* type_min (char* str_min, int minuts)
+char* type_min (char* str_min, int minute)
 {
-	if (minuts % 10 == 1)
+	if (minute % 10 == 1)
 	{
 		return strcpy (str_min, "минута");
 	}
-	if (minuts % 10 == 2 || minuts % 10 == 3 || minuts %10 == 4)
-		if (minuts != 12 || minuts != 13 || minuts != 14)
+	if (minute % 10 == 2 || minute % 10 == 3 || minute %10 == 4)
+		if (minute != 12 || minute != 13 || minute != 14)
 		{
 			return strcpy (str_min, "минуты");
 		}
@@ -67,5 +67,39 @@ char* type_min (char* str_min, int minuts)
 	else
 	{
 		return strcpy (str_min, "минут");
+	}
+}
+
+/**
+ * @fn type_sec
+ * @brief Функция для определения типа слова "секунда"
+ * Функция определяет, когда нужно говорить "секунда", когда "секунд", а когда "секунды".
+ * Например, "одна секунда", "две секунды" или "пять секунд"
+ * 
+ * Принимает:
+ * 	1. Указатель на строку "str_sec", в которую будет записано "секунда", "секунд" или "секунды"
+ * 	2. Число "second", хранящая количество секунд в цифровом формате, например "4" или "17"
+ * 
+ * Возвращает:
+ * 	1. Указатель на строку "str_sec", в которой записано одно из трёх форм слова "секунда"
+ */
+char* type_sec (char* str_sec, int second)
+{
+	if (second % 10 == 1 && second != 11)
+	{
+		return strcpy (str_sec, "секунда");
+	}
+	if (second % 10 == 2 || second % 10 == 3 || second %10 == 4)
+		if (second != 12 || second != 13 || second != 14)
+		{
+			return strcpy (str_sec, "секунды");
+		}
+		else
+		{
+			return strcpy (str_sec, "секунд");
+		}
+	else
+	{
+		return strcpy (str_sec, "секунд");
 	}
 }
