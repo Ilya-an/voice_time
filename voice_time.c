@@ -38,7 +38,7 @@ void set_time (struct tm *t, bool f_sec)
 	str_sec_word = sec_word;										/// планируем передавать в функции
 	
 	str_minute = minute;											
-	str_minute = second;
+	str_second = second;
 	
 	/**В следующем блоке кода мы определяем, в какой форме нужно употребить слова "час", "минута" и "секунда" в зависимости от
 	 * того, сколько сейчас часов или минут, при помощи функций type_hour, type_min и type_sec. Например, 2 часа, или 12 часов.
